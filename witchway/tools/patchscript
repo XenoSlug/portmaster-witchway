@@ -17,6 +17,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Find 7zzs
+SEVENZIP="$GAMEDIR/tools/7zzs"
+[ ! -x "$SEVENZIP" ] && SEVENZIP="$controlfolder/7zzs.aarch64"
+[ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7zzs 2>/dev/null)"
+[ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7za 2>/dev/null)"
+[ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7z 2>/dev/null)"
+
 # 1. Look for zip file in assets
 ZIP_FILE=$(find "$ASSETSDIR" -maxdepth 1 -iname "*witchway*.zip" | head -n 1)
 if [ -n "$ZIP_FILE" ]; then
@@ -32,66 +39,29 @@ if [ -z "$EXE_FILE" ]; then
 fi
 echo "Found executable: $EXE_FILE"
 
-# 3. Extract CAB archive from WitchWay.exe
-python3 - <<EOF
-import os, struct, zipfile
+# 3. Extract CAB archive using 7zzs
+CAB_OUT="$TMPDIR/cab_out"
+mkdir -p "$CAB_OUT"
 
-exe_path = "$EXE_FILE"
-out_dir = "$TMPDIR/cab_out"
-os.makedirs(out_dir, exist_ok=True)
+echo "Extracting installer archive with $SEVENZIP..."
+$SEVENZIP x "$EXE_FILE" -o"$CAB_OUT" -y
 
-with open(exe_path, "rb") as f:
-    data = f.read()
+INNER_EXE=$(find "$CAB_OUT" -maxdepth 1 -iname "WitchWay.exe" | head -n 1)
+if [ -z "$INNER_EXE" ]; then
+    echo "Inner WitchWay.exe not found in cab_out!"
+    exit 1
+fi
 
-# Check for embedded MSCF cabinet
-cab_pos = data.find(b"MSCF")
-if cab_pos != -1:
-    cab_path = os.path.join(out_dir, "archive.cab")
-    with open(cab_path, "wb") as cf:
-        cf.write(data[cab_pos:])
-    print(f"Extracted cabinet archive ({len(data)-cab_pos} bytes)")
-    os.system(f'tar -xf "{cab_path}" -C "{out_dir}" 2>/dev/null || bsdtar -xf "{cab_path}" -C "{out_dir}" 2>/dev/null')
+echo "Extracting game.droid from $INNER_EXE..."
+dd if="$INNER_EXE" of="$CAB_OUT/game.droid" bs=1 skip=4832208 count=18821896
 
-# Search for FORM data.win inside inner WitchWay.exe or data
-target_exe = os.path.join(out_dir, "WitchWay.exe")
-if not os.path.exists(target_exe):
-    target_exe = exe_path
-
-with open(target_exe, "rb") as tf:
-    tdata = tf.read()
-
-# Look for FORM GEN8
-pos = 0
-found = False
-while True:
-    idx = tdata.find(b"FORM", pos)
-    if idx == -1: break
-    if tdata[idx+8:idx+12] == b"GEN8":
-        form_size = struct.unpack("<I", tdata[idx+4:idx+8])[0] + 8
-        with open(os.path.join(out_dir, "game.droid"), "wb") as df:
-            df.write(tdata[idx:idx+form_size])
-        print(f"Extracted game.droid ({form_size} bytes) from offset {idx}")
-        found = True
-        break
-    pos = idx + 4
-
-if not found:
-    print("Warning: FORM chunk with GEN8 not found via scan, checking fallback offset 4832208...")
-    if len(tdata) > 4832208 and tdata[4832208:4832212] == b"FORM":
-        form_size = struct.unpack("<I", tdata[4832208+4:4832208+8])[0] + 8
-        with open(os.path.join(out_dir, "game.droid"), "wb") as df:
-            df.write(tdata[4832208:4832208+form_size])
-        print("Fallback extraction succeeded!")
-EOF
-
-# 4. Check if game.droid was extracted
-if [ ! -f "$TMPDIR/cab_out/game.droid" ]; then
+if [ ! -f "$CAB_OUT/game.droid" ]; then
     echo "ERROR: Failed to extract game.droid!"
     exit 1
 fi
 
-# 5. Assemble game.port
-cd "$TMPDIR/cab_out"
+# 4. Assemble game.port
+cd "$CAB_OUT"
 rm -f "$GAMEDIR/game.port"
 zip -0 -q "$GAMEDIR/game.port" game.droid
 [ -f "audiogroup1.dat" ] && zip -0 -q "$GAMEDIR/game.port" audiogroup1.dat
@@ -99,12 +69,10 @@ zip -0 -q "$GAMEDIR/game.port" mus*.ogg *.ini 2>/dev/null || true
 
 cd "$GAMEDIR"
 if [ -f "$GAMEDIR/game.port" ]; then
-    echo "game.port created successfully!"
+    echo "game.port created successfully! Size: $(wc -c < "$GAMEDIR/game.port")"
     touch "$GAMEDIR/install_completed"
-    # Clean up large source assets to save handheld storage if needed
-    rm -f "$ASSETSDIR/WitchWay 1-12 WIN .zip" "$ASSETSDIR/WitchWay.exe" 2>/dev/null || true
     exit 0
 else
-    echo "Failed to create game.port!"
+    echo "ERROR: Failed to assemble game.port!"
     exit 1
 fi
