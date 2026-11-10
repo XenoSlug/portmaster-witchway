@@ -2,6 +2,8 @@
 
 Port of **WitchWay** by Andrew Gleeson, Henri Rochefort, Niilo Takalainen, and Nathan Antony for PortMaster-compatible Linux handheld gaming devices (muOS, ArkOS, AmberELEC, ROCKNIX, JELOS, etc.).
 
+[![Download PortMaster Zip](https://img.shields.io/badge/Download-witchway.zip-blue?style=for-the-badge&logo=github)](https://github.com/XenoSlug/portmaster-witchway/releases/latest/download/witchway.zip)
+
 ## About the Game
 *WitchWay* is a charming puzzle-platformer where you play as a young witch lost in a deep, sprawling underground well. Equipped with a magical wand, you can pick up, cast, and manipulate blocks and interactive environmental objects to solve clever physics puzzles, avoid deadly hazards, uncover secrets, and rescue lost bunnies.
 
@@ -11,11 +13,12 @@ Port of **WitchWay** by Andrew Gleeson, Henri Rochefort, Niilo Takalainen, and N
 
 ## Installation Instructions
 
-### Option 1: Automatic Setup on Device (Easiest)
-1. Download or clone this port repository.
-2. Copy `WitchWay.sh` and the `witchway/` folder into your handheld's `/roms/ports/` directory (or `/ports/` depending on your OS).
-3. Place your purchased `WitchWay 1-12 WIN .zip` (or `WitchWay.exe`) into `/roms/ports/witchway/assets/`.
-4. Launch **WitchWay** from your Ports menu. PortMaster will automatically extract the assets and prepare the game on first run.
+### Option 1: PortMaster Autoinstall (Recommended)
+1. Download [**`witchway.zip`**](https://github.com/XenoSlug/portmaster-witchway/releases/latest/download/witchway.zip) from the latest release.
+2. Copy `witchway.zip` directly into your handheld SD card under `/roms/ports/autoinstall/` (or `/ports/autoinstall/`).
+3. Boot PortMaster or your handheld to allow PortMaster to extract the files.
+4. Place your purchased `WitchWay 1-12 WIN .zip` (or `WitchWay.exe`) into `/roms/ports/witchway/assets/`.
+5. Launch **WitchWay** from the Ports menu! The game files will be prepared and configured automatically on first launch.
 
 ### Option 2: Pre-assemble on Mac / PC
 1. Run the included `tools/patch_witchway.py` on your computer:
