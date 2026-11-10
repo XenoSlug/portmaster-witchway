@@ -79,6 +79,12 @@ else
     GMLOADER_BIN="./gmloadernext.aarch64"
 fi
 
+# Display loading splash
+if [ -f "$GAMEDIR/tools/splash" ] && [ -f "$GAMEDIR/splash.png" ]; then
+    $ESUDO chmod +x "$GAMEDIR/tools/splash"
+    $ESUDO "$GAMEDIR/tools/splash" "$GAMEDIR/splash.png" 4000 &
+fi
+
 # Launch game with gptokeyb
 $GPTOKEYB "$(basename "$GMLOADER_BIN")" -c "$GAMEDIR/witchway.gptk" &
 pm_platform_helper "$GMLOADER_BIN" >/dev/null
