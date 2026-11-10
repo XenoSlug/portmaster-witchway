@@ -18,6 +18,7 @@ get_controls
 
 GAMEDIR="/$directory/ports/witchway"
 cd "$GAMEDIR"
+mkdir -p "$GAMEDIR/assets"
 > "$GAMEDIR/log.txt" && exec > >(tee "$GAMEDIR/log.txt") 2>&1
 
 # Auto-copy boxart to muOS catalogue if running on muOS

@@ -10,6 +10,7 @@ echo "=== Starting WitchWay asset preparation ==="
 echo "Working directory: $GAMEDIR"
 
 mkdir -p "$TMPDIR"
+mkdir -p "$ASSETSDIR"
 mkdir -p "$GAMEDIR/saves"
 
 cleanup() {
@@ -24,17 +25,17 @@ SEVENZIP="$GAMEDIR/tools/7zzs"
 [ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7za 2>/dev/null)"
 [ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7z 2>/dev/null)"
 
-# 1. Look for zip file in assets
-ZIP_FILE=$(find "$ASSETSDIR" -maxdepth 1 -iname "*witchway*.zip" | head -n 1)
+# 1. Look for zip file in assets or gamedir
+ZIP_FILE=$(find "$ASSETSDIR" "$GAMEDIR" -maxdepth 2 -iname "*witchway*.zip" -o -iname "*witch*way*.zip" | head -n 1)
 if [ -n "$ZIP_FILE" ]; then
     echo "Found WitchWay zip archive: $ZIP_FILE"
     unzip -o -q "$ZIP_FILE" -d "$TMPDIR"
 fi
 
-# 2. Look for WitchWay.exe
-EXE_FILE=$(find "$ASSETSDIR" "$TMPDIR" -maxdepth 2 -iname "WitchWay.exe" | head -n 1)
+# 2. Look for WitchWay.exe in assets, gamedir, or tmp
+EXE_FILE=$(find "$ASSETSDIR" "$GAMEDIR" "$TMPDIR" -maxdepth 2 -iname "WitchWay.exe" | head -n 1)
 if [ -z "$EXE_FILE" ]; then
-    echo "ERROR: WitchWay.exe not found in $ASSETSDIR!"
+    echo "ERROR: WitchWay.exe not found in $ASSETSDIR or $GAMEDIR!"
     exit 1
 fi
 echo "Found executable: $EXE_FILE"
