@@ -21,15 +21,21 @@ cd "$GAMEDIR"
 > "$GAMEDIR/log.txt" && exec > >(tee "$GAMEDIR/log.txt") 2>&1
 
 # Auto-copy boxart to muOS catalogue if running on muOS
-for muos_box in "/mnt/mmc/MUOS/info/catalogue/Ports/box" "/mnt/sdcard/MUOS/info/catalogue/Ports/box"; do
-    if [ -d "$muos_box" ] && [ ! -f "$muos_box/WitchWay.png" ]; then
-        cp "$GAMEDIR/cover.png" "$muos_box/WitchWay.png" 2>/dev/null
+for cat_dir in "/mnt/mmc/MUOS/info/catalogue" "/mnt/sdcard/MUOS/info/catalogue"; do
+    if [ -d "$cat_dir" ]; then
+        for pdir in "Ports" "PORTS" "ports"; do
+            mkdir -p "$cat_dir/$pdir/box" "$cat_dir/$pdir/preview" 2>/dev/null
+            cp -f "$GAMEDIR/cover.png" "$cat_dir/$pdir/box/WitchWay.png" 2>/dev/null
+            cp -f "$GAMEDIR/cover.png" "$cat_dir/$pdir/preview/WitchWay.png" 2>/dev/null
+        done
     fi
 done
 
-$ESUDO chmod +x "$GAMEDIR/tools/patchscript"
+$ESUDO chmod +x "$GAMEDIR/gmloadernext.aarch64" 2>/dev/null || true
+$ESUDO chmod +x "$GAMEDIR/tools/patchscript" 2>/dev/null || true
+$ESUDO chmod +x "$GAMEDIR/tools/splash" 2>/dev/null || true
 
-export LD_LIBRARY_PATH="$GAMEDIR/libs:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$GAMEDIR/lib/arm64-v8a:$GAMEDIR/lib:$GAMEDIR/libs:$LD_LIBRARY_PATH"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 export ESUDO
 export controlfolder
@@ -56,41 +62,17 @@ if [ ! -f "$GAMEDIR/game.port" ]; then
     exit 1
 fi
 
-# Load gmtoolkit runtime if gmloadernext is not local
-if [ ! -f "$GAMEDIR/gmloadernext.aarch64" ] && [ -f "$controlfolder/libs/gmtoolkit.squashfs" ]; then
-    TOOLKIT="$HOME/gmtoolkit"
-    $ESUDO mkdir -p "$TOOLKIT"
-    $ESUDO umount "$TOOLKIT" 2>/dev/null || true
-    $ESUDO mount "$controlfolder/libs/gmtoolkit.squashfs" "$TOOLKIT"
-    GMLOADER_BIN="$TOOLKIT/gmloadernext.aarch64"
-    export LD_LIBRARY_PATH="$TOOLKIT/libs:$LD_LIBRARY_PATH"
-elif [ -f "$GAMEDIR/gmloadernext.aarch64" ]; then
-    $ESUDO chmod +x "$GAMEDIR/gmloadernext.aarch64"
-    GMLOADER_BIN="$GAMEDIR/gmloadernext.aarch64"
-elif [ -f "$controlfolder/harbourmaster" ]; then
-    # Attempt to fetch gmtoolkit runtime if missing
-    $controlfolder/harbourmaster --quiet --no-check runtime_check "gmtoolkit.squashfs"
-    TOOLKIT="$HOME/gmtoolkit"
-    $ESUDO mkdir -p "$TOOLKIT"
-    $ESUDO mount "$controlfolder/libs/gmtoolkit.squashfs" "$TOOLKIT"
-    GMLOADER_BIN="$TOOLKIT/gmloadernext.aarch64"
-    export LD_LIBRARY_PATH="$TOOLKIT/libs:$LD_LIBRARY_PATH"
-else
-    GMLOADER_BIN="./gmloadernext.aarch64"
-fi
-
 # Display loading splash
 if [ -f "$GAMEDIR/tools/splash" ] && [ -f "$GAMEDIR/splash.png" ]; then
-    $ESUDO chmod +x "$GAMEDIR/tools/splash"
     $ESUDO "$GAMEDIR/tools/splash" "$GAMEDIR/splash.png" 4000 &
 fi
 
 # Launch game with gptokeyb
-$GPTOKEYB "$(basename "$GMLOADER_BIN")" -c "$GAMEDIR/witchway.gptk" &
-pm_platform_helper "$GMLOADER_BIN" >/dev/null
+$GPTOKEYB "gmloadernext.aarch64" -c "$GAMEDIR/witchway.gptk" &
+pm_platform_helper "$GAMEDIR/gmloadernext.aarch64" >/dev/null
 
-$GMLOADER_BIN -c gmloader.json
+$GAMEDIR/gmloadernext.aarch64 -c gmloader.json
 
 # Cleanup
-[ -d "$HOME/gmtoolkit" ] && $ESUDO umount "$HOME/gmtoolkit" 2>/dev/null || true
+$ESUDO kill -9 $(pidof gptokeyb) 2>/dev/null || true
 pm_finish

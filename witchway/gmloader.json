@@ -8,5 +8,5 @@
   "disable_rumble": false,
   "disable_texhack": false,
   "rumble_scale": 1.0,
-  "force_platform": "os_switch"
+  "force_platform": "os_windows"
 }
