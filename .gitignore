@@ -1,0 +1,13 @@
+# Ignore copyrighted game data
+game.port
+*.apk
+*.zip
+*.exe
+*.cab
+assets/*
+!assets/.gitkeep
+tmp*/
+saves/
+log.txt
+*.log
+.DS_Store

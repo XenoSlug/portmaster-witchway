@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gameList>
+  <game>
+    <path>./WitchWay.sh</path>
+    <name>WitchWay</name>
+    <desc>A puzzle-platformer where you play as a little witch trapped in a deep well. Using your magic wand, manipulate blocks and environmental objects to solve puzzles, navigate hazards, and rescue bunnies.</desc>
+    <releasedate>20170208T000000</releasedate>
+    <developer>Andrew Gleeson</developer>
+    <publisher>Andrew Gleeson</publisher>
+    <genre>Puzzle / Platformer</genre>
+    <players>1</players>
+  </game>
+</gameList>

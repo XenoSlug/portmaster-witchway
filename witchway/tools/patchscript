@@ -1,0 +1,110 @@
+#!/bin/bash
+# WitchWay PortMaster Asset Preparation Script
+GAMEDIR="$PWD"
+ASSETSDIR="$GAMEDIR/assets"
+LOGFILE="$GAMEDIR/patchlog.txt"
+TMPDIR="$GAMEDIR/tmp_patch"
+
+exec > >(tee -a "$LOGFILE") 2>&1
+echo "=== Starting WitchWay asset preparation ==="
+echo "Working directory: $GAMEDIR"
+
+mkdir -p "$TMPDIR"
+mkdir -p "$GAMEDIR/saves"
+
+cleanup() {
+    rm -rf "$TMPDIR"
+}
+trap cleanup EXIT
+
+# 1. Look for zip file in assets
+ZIP_FILE=$(find "$ASSETSDIR" -maxdepth 1 -iname "*witchway*.zip" | head -n 1)
+if [ -n "$ZIP_FILE" ]; then
+    echo "Found WitchWay zip archive: $ZIP_FILE"
+    unzip -o -q "$ZIP_FILE" -d "$TMPDIR"
+fi
+
+# 2. Look for WitchWay.exe
+EXE_FILE=$(find "$ASSETSDIR" "$TMPDIR" -maxdepth 2 -iname "WitchWay.exe" | head -n 1)
+if [ -z "$EXE_FILE" ]; then
+    echo "ERROR: WitchWay.exe not found in $ASSETSDIR!"
+    exit 1
+fi
+echo "Found executable: $EXE_FILE"
+
+# 3. Extract CAB archive from WitchWay.exe
+python3 - <<EOF
+import os, struct, zipfile
+
+exe_path = "$EXE_FILE"
+out_dir = "$TMPDIR/cab_out"
+os.makedirs(out_dir, exist_ok=True)
+
+with open(exe_path, "rb") as f:
+    data = f.read()
+
+# Check for embedded MSCF cabinet
+cab_pos = data.find(b"MSCF")
+if cab_pos != -1:
+    cab_path = os.path.join(out_dir, "archive.cab")
+    with open(cab_path, "wb") as cf:
+        cf.write(data[cab_pos:])
+    print(f"Extracted cabinet archive ({len(data)-cab_pos} bytes)")
+    os.system(f'tar -xf "{cab_path}" -C "{out_dir}" 2>/dev/null || bsdtar -xf "{cab_path}" -C "{out_dir}" 2>/dev/null')
+
+# Search for FORM data.win inside inner WitchWay.exe or data
+target_exe = os.path.join(out_dir, "WitchWay.exe")
+if not os.path.exists(target_exe):
+    target_exe = exe_path
+
+with open(target_exe, "rb") as tf:
+    tdata = tf.read()
+
+# Look for FORM GEN8
+pos = 0
+found = False
+while True:
+    idx = tdata.find(b"FORM", pos)
+    if idx == -1: break
+    if tdata[idx+8:idx+12] == b"GEN8":
+        form_size = struct.unpack("<I", tdata[idx+4:idx+8])[0] + 8
+        with open(os.path.join(out_dir, "game.droid"), "wb") as df:
+            df.write(tdata[idx:idx+form_size])
+        print(f"Extracted game.droid ({form_size} bytes) from offset {idx}")
+        found = True
+        break
+    pos = idx + 4
+
+if not found:
+    print("Warning: FORM chunk with GEN8 not found via scan, checking fallback offset 4832208...")
+    if len(tdata) > 4832208 and tdata[4832208:4832212] == b"FORM":
+        form_size = struct.unpack("<I", tdata[4832208+4:4832208+8])[0] + 8
+        with open(os.path.join(out_dir, "game.droid"), "wb") as df:
+            df.write(tdata[4832208:4832208+form_size])
+        print("Fallback extraction succeeded!")
+EOF
+
+# 4. Check if game.droid was extracted
+if [ ! -f "$TMPDIR/cab_out/game.droid" ]; then
+    echo "ERROR: Failed to extract game.droid!"
+    exit 1
+fi
+
+# 5. Assemble game.port
+cd "$TMPDIR/cab_out"
+rm -f "$GAMEDIR/game.port"
+zip -0 -q "$GAMEDIR/game.port" game.droid
+[ -f "audiogroup1.dat" ] && zip -0 -q "$GAMEDIR/game.port" audiogroup1.dat
+zip -0 -q "$GAMEDIR/game.port" mus*.ogg *.ini 2>/dev/null || true
+
+cd "$GAMEDIR"
+if [ -f "$GAMEDIR/game.port" ]; then
+    echo "game.port created successfully!"
+    touch "$GAMEDIR/install_completed"
+    # Clean up large source assets to save handheld storage if needed
+    rm -f "$ASSETSDIR/WitchWay 1-12 WIN .zip" "$ASSETSDIR/WitchWay.exe" 2>/dev/null || true
+    exit 0
+else
+    echo "Failed to create game.port!"
+    exit 1
+fi
