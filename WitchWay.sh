@@ -20,6 +20,13 @@ GAMEDIR="/$directory/ports/witchway"
 cd "$GAMEDIR"
 > "$GAMEDIR/log.txt" && exec > >(tee "$GAMEDIR/log.txt") 2>&1
 
+# Auto-copy boxart to muOS catalogue if running on muOS
+for muos_box in "/mnt/mmc/MUOS/info/catalogue/Ports/box" "/mnt/sdcard/MUOS/info/catalogue/Ports/box"; do
+    if [ -d "$muos_box" ] && [ ! -f "$muos_box/WitchWay.png" ]; then
+        cp "$GAMEDIR/cover.png" "$muos_box/WitchWay.png" 2>/dev/null
+    fi
+done
+
 $ESUDO chmod +x "$GAMEDIR/tools/patchscript"
 
 export LD_LIBRARY_PATH="$GAMEDIR/libs:$LD_LIBRARY_PATH"
