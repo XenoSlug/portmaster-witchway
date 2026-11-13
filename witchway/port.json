@@ -5,7 +5,9 @@
     "WitchWay.sh",
     "witchway"
   ],
-  "items_opt": [],
+  "items_opt": [
+    "WitchWay.png"
+  ],
   "attr": {
     "title": "WitchWay",
     "porter": [
