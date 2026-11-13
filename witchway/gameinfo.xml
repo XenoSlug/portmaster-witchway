@@ -3,7 +3,9 @@
   <game>
     <path>./WitchWay.sh</path>
     <name>WitchWay</name>
-    <desc>A puzzle-platformer where you play as a little witch trapped in a deep well. Using your magic wand, manipulate blocks and environmental objects to solve puzzles, navigate hazards, and rescue bunnies.</desc>
+    <desc>Pixel-art puzzle platformer exploring underground caverns using magic wand physics to move blocks.</desc>
+    <image>./witchway/screenshot.png</image>
+    <thumbnail>./witchway/cover.png</thumbnail>
     <releasedate>20170208T000000</releasedate>
     <developer>Andrew Gleeson</developer>
     <publisher>Andrew Gleeson</publisher>

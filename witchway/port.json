@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "name": "witchway.zip",
   "items": [
     "WitchWay.sh",
@@ -11,21 +11,20 @@
     "porter": [
       "XenoSlug"
     ],
-    "desc": "A puzzle-platformer where you play as a little witch trapped in a deep well. Using your magic wand, you manipulate blocks and environmental objects to solve puzzles, navigate hazards, and rescue bunnies.",
-    "desc_md": null,
-    "inst": "Place your purchased WitchWay files (WitchWay 1-12 WIN .zip or WitchWay.exe) into the 'witchway/assets' folder. The port will automatically extract and prepare the files on first launch.",
-    "inst_md": "1. Purchase WitchWay from [itch.io](https://andrewgleeson.itch.io/witchway).\n2. Place `WitchWay 1-12 WIN .zip` (or `WitchWay.exe`) into `ports/witchway/assets/`.\n3. Launch the game from PortMaster to auto-extract and play!",
+    "desc": "Pixel-art puzzle platformer exploring underground caverns using magic wand physics to move blocks.",
+    "inst": "Place your purchased WitchWay files into the 'witchway/assets' folder. The port will automatically prepare files on first launch.",
     "genres": [
       "puzzle",
       "platformer"
     ],
-    "image": null,
+    "image": {
+      "screenshot": "screenshot.png",
+      "cover": "cover.png"
+    },
     "rtr": false,
     "exp": false,
     "runtime": "gmtoolkit.squashfs",
     "reqs": [],
-    "arch": [
-      "aarch64"
-    ]
+    "arch": []
   }
 }
