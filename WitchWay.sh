@@ -52,6 +52,8 @@ done
 
 $ESUDO chmod +x "$GAMEDIR/gmloadernext.aarch64" 2>/dev/null || true
 $ESUDO chmod +x "$GAMEDIR/tools/patchscript" 2>/dev/null || true
+$ESUDO chmod +x "$GAMEDIR/tools/patch_witchway.py" 2>/dev/null || true
+$ESUDO chmod +x "$GAMEDIR/tools/7zzs" 2>/dev/null || true
 $ESUDO chmod +x "$GAMEDIR/tools/splash" 2>/dev/null || true
 
 export LD_LIBRARY_PATH="$GAMEDIR/lib/arm64-v8a:$GAMEDIR/lib:$GAMEDIR/libs:$LD_LIBRARY_PATH"

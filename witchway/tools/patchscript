@@ -1,79 +1,28 @@
 #!/bin/bash
-# WitchWay PortMaster Asset Preparation Script
-GAMEDIR="$PWD"
-ASSETSDIR="$GAMEDIR/assets"
+# ==============================================================================
+# WitchWay Asset Preparation Script
+# ==============================================================================
+
+GAMEDIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOGFILE="$GAMEDIR/patchlog.txt"
-TMPDIR="$GAMEDIR/tmp_patch"
 
 exec > >(tee -a "$LOGFILE") 2>&1
 echo "=== Starting WitchWay asset preparation ==="
 echo "Working directory: $GAMEDIR"
 
-mkdir -p "$TMPDIR"
-mkdir -p "$ASSETSDIR"
-mkdir -p "$GAMEDIR/saves"
+# Ensure tools are executable
+chmod +x "$GAMEDIR/tools/7zzs" 2>/dev/null || true
+chmod +x "$GAMEDIR/tools/patch_witchway.py" 2>/dev/null || true
 
-cleanup() {
-    rm -rf "$TMPDIR"
-}
-trap cleanup EXIT
+# Run python patch script
+python3 "$GAMEDIR/tools/patch_witchway.py"
+RET=$?
 
-# Find 7zzs
-SEVENZIP="$GAMEDIR/tools/7zzs"
-[ ! -x "$SEVENZIP" ] && SEVENZIP="$controlfolder/7zzs.aarch64"
-[ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7zzs 2>/dev/null)"
-[ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7za 2>/dev/null)"
-[ ! -x "$SEVENZIP" ] && SEVENZIP="$(which 7z 2>/dev/null)"
-
-# 1. Look for zip file in assets or gamedir
-ZIP_FILE=$(find "$ASSETSDIR" "$GAMEDIR" -maxdepth 2 -iname "*witchway*.zip" -o -iname "*witch*way*.zip" | head -n 1)
-if [ -n "$ZIP_FILE" ]; then
-    echo "Found WitchWay zip archive: $ZIP_FILE"
-    unzip -o -q "$ZIP_FILE" -d "$TMPDIR"
-fi
-
-# 2. Look for WitchWay.exe in assets, gamedir, or tmp
-EXE_FILE=$(find "$ASSETSDIR" "$GAMEDIR" "$TMPDIR" -maxdepth 2 -iname "WitchWay.exe" | head -n 1)
-if [ -z "$EXE_FILE" ]; then
-    echo "ERROR: WitchWay.exe not found in $ASSETSDIR or $GAMEDIR!"
-    exit 1
-fi
-echo "Found executable: $EXE_FILE"
-
-# 3. Extract CAB archive using 7zzs
-CAB_OUT="$TMPDIR/cab_out"
-mkdir -p "$CAB_OUT"
-
-echo "Extracting installer archive with $SEVENZIP..."
-$SEVENZIP x "$EXE_FILE" -o"$CAB_OUT" -y
-
-INNER_EXE=$(find "$CAB_OUT" -maxdepth 1 -iname "WitchWay.exe" | head -n 1)
-if [ -z "$INNER_EXE" ]; then
-    echo "Inner WitchWay.exe not found in cab_out!"
-    exit 1
-fi
-
-echo "Extracting game.droid from $INNER_EXE..."
-dd if="$INNER_EXE" of="$CAB_OUT/game.droid" bs=1 skip=4832208 count=18821896
-
-if [ ! -f "$CAB_OUT/game.droid" ]; then
-    echo "ERROR: Failed to extract game.droid!"
-    exit 1
-fi
-
-# 4. Assemble game.port
-cd "$CAB_OUT"
-rm -f "$GAMEDIR/game.port"
-zip -0 -q "$GAMEDIR/game.port" game.droid
-[ -f "audiogroup1.dat" ] && zip -0 -q "$GAMEDIR/game.port" audiogroup1.dat
-zip -0 -q "$GAMEDIR/game.port" mus*.ogg *.ini 2>/dev/null || true
-
-cd "$GAMEDIR"
-if [ -f "$GAMEDIR/game.port" ]; then
-    echo "game.port created successfully! Size: $(wc -c < "$GAMEDIR/game.port")"
+if [ $RET -eq 0 ] && [ -f "$GAMEDIR/game.port" ]; then
+    echo "WitchWay patching succeeded! game.port size: $(wc -c < "$GAMEDIR/game.port") bytes"
     touch "$GAMEDIR/install_completed"
     exit 0
 else
-    echo "ERROR: Failed to assemble game.port!"
+    echo "ERROR: WitchWay patching failed with code $RET!"
     exit 1
 fi
